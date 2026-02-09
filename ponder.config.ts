@@ -1,8 +1,10 @@
 import { createConfig } from "@ponder/core";
 import { createPublicClient, http } from "viem";
 
-import AxonArenaAbi from "./abi/AxonArena.json";
+import AxonArenaArtifact from "./abi/AxonArena.json";
 import INeuronTokenAbi from "./abi/INeuronToken.json";
+
+const AxonArenaAbi = (AxonArenaArtifact as any).abi ?? AxonArenaArtifact;
 
 async function getStartBlock(envVar: string): Promise<number> {
   const val = process.env[envVar];
