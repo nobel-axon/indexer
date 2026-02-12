@@ -197,6 +197,201 @@ export const chainNeuronBurned = onchainTable(
 );
 
 // ============================================================================
+// BountyArena Events
+// ============================================================================
+
+export const chainBountyCreated = onchainTable(
+  "chain_bounty_created",
+  (t) => ({
+    id: t.text().primaryKey(),
+    bountyId: t.bigint().notNull(),
+    creator: t.text().notNull(),
+    reward: t.bigint().notNull(),
+    question: t.text().notNull(),
+    category: t.text().notNull(),
+    difficulty: t.integer().notNull(),
+    minRating: t.bigint().notNull(),
+    joinDeadline: t.bigint().notNull(),
+    maxAgents: t.integer().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    bountyIdIdx: index().on(table.bountyId),
+    creatorIdx: index().on(table.creator),
+    categoryIdx: index().on(table.category),
+    blockTimestampIdx: index().on(table.blockTimestamp),
+  })
+);
+
+export const chainAgentJoinedBounty = onchainTable(
+  "chain_agent_joined_bounty",
+  (t) => ({
+    id: t.text().primaryKey(),
+    bountyId: t.bigint().notNull(),
+    agent: t.text().notNull(),
+    agentId: t.bigint().notNull(),
+    agentCount: t.bigint().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    bountyIdIdx: index().on(table.bountyId),
+    agentIdx: index().on(table.agent),
+  })
+);
+
+export const chainBountyAnswerPeriodStarted = onchainTable(
+  "chain_bounty_answer_period_started",
+  (t) => ({
+    id: t.text().primaryKey(),
+    bountyId: t.bigint().notNull(),
+    startTime: t.bigint().notNull(),
+    deadline: t.bigint().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    bountyIdIdx: index().on(table.bountyId),
+  })
+);
+
+export const chainBountyAnswerSubmitted = onchainTable(
+  "chain_bounty_answer_submitted",
+  (t) => ({
+    id: t.text().primaryKey(),
+    bountyId: t.bigint().notNull(),
+    agent: t.text().notNull(),
+    answer: t.text().notNull(),
+    attemptNumber: t.bigint().notNull(),
+    neuronBurned: t.bigint().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    bountyIdIdx: index().on(table.bountyId),
+    agentIdx: index().on(table.agent),
+    bountyAgentIdx: index().on(table.bountyId, table.agent),
+  })
+);
+
+export const chainBountySettled = onchainTable(
+  "chain_bounty_settled",
+  (t) => ({
+    id: t.text().primaryKey(),
+    bountyId: t.bigint().notNull(),
+    winner: t.text().notNull(),
+    winnerPrize: t.bigint().notNull(),
+    treasuryFee: t.bigint().notNull(),
+    burnAllocationAmount: t.bigint().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    bountyIdIdx: index().on(table.bountyId),
+    winnerIdx: index().on(table.winner),
+  })
+);
+
+export const chainBountyExpired = onchainTable(
+  "chain_bounty_expired",
+  (t) => ({
+    id: t.text().primaryKey(),
+    bountyId: t.bigint().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    bountyIdIdx: index().on(table.bountyId),
+  })
+);
+
+export const chainBountyRefunded = onchainTable(
+  "chain_bounty_refunded",
+  (t) => ({
+    id: t.text().primaryKey(),
+    bountyId: t.bigint().notNull(),
+    agentCount: t.bigint().notNull(),
+    refundPerAgent: t.bigint().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    bountyIdIdx: index().on(table.bountyId),
+  })
+);
+
+export const chainBountyNeuronBurned = onchainTable(
+  "chain_bounty_neuron_burned",
+  (t) => ({
+    id: t.text().primaryKey(),
+    bountyId: t.bigint().notNull(),
+    agent: t.text().notNull(),
+    amount: t.bigint().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    bountyIdIdx: index().on(table.bountyId),
+    agentIdx: index().on(table.agent),
+  })
+);
+
+// ============================================================================
+// ERC-8004 Identity & Reputation Events
+// ============================================================================
+
+export const chainAgentRegistered = onchainTable(
+  "chain_agent_registered",
+  (t) => ({
+    id: t.text().primaryKey(),
+    agentId: t.bigint().notNull(),
+    owner: t.text().notNull(),
+    agentURI: t.text().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    agentIdIdx: index().on(table.agentId),
+    ownerIdx: index().on(table.owner),
+  })
+);
+
+export const chainFeedbackGiven = onchainTable(
+  "chain_feedback_given",
+  (t) => ({
+    id: t.text().primaryKey(),
+    agentId: t.bigint().notNull(),
+    clientAddress: t.text().notNull(),
+    feedbackIndex: t.bigint().notNull(),
+    value: t.bigint().notNull(),
+    valueDecimals: t.integer().notNull(),
+    tag1: t.text().notNull(),
+    tag2: t.text().notNull(),
+    endpoint: t.text().notNull(),
+    feedbackURI: t.text().notNull(),
+    feedbackHash: t.text().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    agentIdIdx: index().on(table.agentId),
+    clientAddressIdx: index().on(table.clientAddress),
+    tag1Idx: index().on(table.tag1),
+  })
+);
+
+// ============================================================================
 // NeuronToken Events (Transfer to 0x0 = burn)
 // ============================================================================
 
