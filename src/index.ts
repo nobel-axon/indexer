@@ -69,7 +69,7 @@ ponder.on("AxonArena:MatchStarted", async ({ event, context }) => {
   // Notify axon-server that match started (waiting for question)
   await notifyServer("/internal/match-update", {
     matchId: Number(event.args.matchId),
-    phase: "started",
+    phase: "question_pending",
     playerCount: Number(event.args.playerCount),
     poolTotal: event.args.pool.toString(),
   });
@@ -165,6 +165,7 @@ ponder.on("AxonArena:MatchSettled", async ({ event, context }) => {
     prizeMon: event.args.winnerPrize.toString(),
     treasuryFee: event.args.treasuryFee.toString(),
     burnAllocation: event.args.burnAllocationAmount.toString(),
+    settleTxHash: event.log.transactionHash,
     isCancelled: false,
   });
 });
@@ -204,6 +205,7 @@ ponder.on("AxonArena:MatchRefunded", async ({ event, context }) => {
     matchId: Number(event.args.matchId),
     isCancelled: true,
     reason: "refunded",
+    settleTxHash: event.log.transactionHash,
     refundPerPlayer: event.args.refundPerPlayer.toString(),
     playerCount: Number(event.args.playerCount),
   });
@@ -235,6 +237,62 @@ ponder.on("AxonArena:NeuronBurned", async ({ event, context }) => {
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
     transactionHash: event.log.transactionHash,
+  });
+});
+
+// ============================================================================
+// AxonArena Refund/Burn Events
+// ============================================================================
+
+ponder.on("AxonArena:BurnAllocationClaimed", async ({ event, context }) => {
+  await context.db.insert(schema.chainBurnAllocationClaimed).values({
+    id: `${event.log.transactionHash}-${event.log.logIndex}`,
+    operator: event.args.operator,
+    winner: event.args.winner,
+    amount: event.args.amount,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+    transactionHash: event.log.transactionHash,
+  });
+
+  await notifyServer("/internal/burn-allocation-claimed", {
+    operator: event.args.operator,
+    winner: event.args.winner,
+    amount: event.args.amount.toString(),
+  });
+});
+
+ponder.on("AxonArena:RefundCredited", async ({ event, context }) => {
+  await context.db.insert(schema.chainRefundCredited).values({
+    id: `${event.log.transactionHash}-${event.log.logIndex}`,
+    matchId: event.args.matchId,
+    player: event.args.player,
+    amount: event.args.amount,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+    transactionHash: event.log.transactionHash,
+  });
+
+  await notifyServer("/internal/refund-credited", {
+    matchId: Number(event.args.matchId),
+    player: event.args.player,
+    amount: event.args.amount.toString(),
+  });
+});
+
+ponder.on("AxonArena:RefundWithdrawn", async ({ event, context }) => {
+  await context.db.insert(schema.chainRefundWithdrawn).values({
+    id: `${event.log.transactionHash}-${event.log.logIndex}`,
+    player: event.args.player,
+    amount: event.args.amount,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+    transactionHash: event.log.transactionHash,
+  });
+
+  await notifyServer("/internal/refund-withdrawn", {
+    player: event.args.player,
+    amount: event.args.amount.toString(),
   });
 });
 

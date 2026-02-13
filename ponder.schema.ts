@@ -196,6 +196,55 @@ export const chainNeuronBurned = onchainTable(
   })
 );
 
+export const chainBurnAllocationClaimed = onchainTable(
+  "chain_burn_allocation_claimed",
+  (t) => ({
+    id: t.text().primaryKey(),
+    operator: t.text().notNull(),
+    winner: t.text().notNull(),
+    amount: t.bigint().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    winnerIdx: index().on(table.winner),
+    operatorIdx: index().on(table.operator),
+  })
+);
+
+export const chainRefundCredited = onchainTable(
+  "chain_refund_credited",
+  (t) => ({
+    id: t.text().primaryKey(),
+    matchId: t.bigint().notNull(),
+    player: t.text().notNull(),
+    amount: t.bigint().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    matchIdIdx: index().on(table.matchId),
+    playerIdx: index().on(table.player),
+  })
+);
+
+export const chainRefundWithdrawn = onchainTable(
+  "chain_refund_withdrawn",
+  (t) => ({
+    id: t.text().primaryKey(),
+    player: t.text().notNull(),
+    amount: t.bigint().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    playerIdx: index().on(table.player),
+  })
+);
+
 // ============================================================================
 // BountyArena Events
 // ============================================================================
@@ -207,11 +256,12 @@ export const chainBountyCreated = onchainTable(
     bountyId: t.bigint().notNull(),
     creator: t.text().notNull(),
     reward: t.bigint().notNull(),
+    baseAnswerFee: t.bigint().notNull(),
     question: t.text().notNull(),
     category: t.text().notNull(),
     difficulty: t.integer().notNull(),
     minRating: t.bigint().notNull(),
-    joinDeadline: t.bigint().notNull(),
+    deadline: t.bigint().notNull(),
     maxAgents: t.integer().notNull(),
     blockNumber: t.bigint().notNull(),
     blockTimestamp: t.bigint().notNull(),
@@ -233,6 +283,7 @@ export const chainAgentJoinedBounty = onchainTable(
     agent: t.text().notNull(),
     agentId: t.bigint().notNull(),
     agentCount: t.bigint().notNull(),
+    snapshotReputation: t.bigint().notNull(),
     blockNumber: t.bigint().notNull(),
     blockTimestamp: t.bigint().notNull(),
     transactionHash: t.text().notNull(),
@@ -240,22 +291,6 @@ export const chainAgentJoinedBounty = onchainTable(
   (table) => ({
     bountyIdIdx: index().on(table.bountyId),
     agentIdx: index().on(table.agent),
-  })
-);
-
-export const chainBountyAnswerPeriodStarted = onchainTable(
-  "chain_bounty_answer_period_started",
-  (t) => ({
-    id: t.text().primaryKey(),
-    bountyId: t.bigint().notNull(),
-    startTime: t.bigint().notNull(),
-    deadline: t.bigint().notNull(),
-    blockNumber: t.bigint().notNull(),
-    blockTimestamp: t.bigint().notNull(),
-    transactionHash: t.text().notNull(),
-  }),
-  (table) => ({
-    bountyIdIdx: index().on(table.bountyId),
   })
 );
 
@@ -285,9 +320,7 @@ export const chainBountySettled = onchainTable(
     id: t.text().primaryKey(),
     bountyId: t.bigint().notNull(),
     winner: t.text().notNull(),
-    winnerPrize: t.bigint().notNull(),
-    treasuryFee: t.bigint().notNull(),
-    burnAllocationAmount: t.bigint().notNull(),
+    reward: t.bigint().notNull(),
     blockNumber: t.bigint().notNull(),
     blockTimestamp: t.bigint().notNull(),
     transactionHash: t.text().notNull(),
@@ -298,33 +331,54 @@ export const chainBountySettled = onchainTable(
   })
 );
 
-export const chainBountyExpired = onchainTable(
-  "chain_bounty_expired",
+export const chainWinnerRewardClaimed = onchainTable(
+  "chain_winner_reward_claimed",
   (t) => ({
     id: t.text().primaryKey(),
     bountyId: t.bigint().notNull(),
+    winner: t.text().notNull(),
+    amount: t.bigint().notNull(),
     blockNumber: t.bigint().notNull(),
     blockTimestamp: t.bigint().notNull(),
     transactionHash: t.text().notNull(),
   }),
   (table) => ({
     bountyIdIdx: index().on(table.bountyId),
+    winnerIdx: index().on(table.winner),
   })
 );
 
-export const chainBountyRefunded = onchainTable(
-  "chain_bounty_refunded",
+export const chainProportionalClaimed = onchainTable(
+  "chain_proportional_claimed",
   (t) => ({
     id: t.text().primaryKey(),
     bountyId: t.bigint().notNull(),
-    agentCount: t.bigint().notNull(),
-    refundPerAgent: t.bigint().notNull(),
+    agent: t.text().notNull(),
+    amount: t.bigint().notNull(),
     blockNumber: t.bigint().notNull(),
     blockTimestamp: t.bigint().notNull(),
     transactionHash: t.text().notNull(),
   }),
   (table) => ({
     bountyIdIdx: index().on(table.bountyId),
+    agentIdx: index().on(table.agent),
+  })
+);
+
+export const chainRefundClaimed = onchainTable(
+  "chain_refund_claimed",
+  (t) => ({
+    id: t.text().primaryKey(),
+    bountyId: t.bigint().notNull(),
+    creator: t.text().notNull(),
+    amount: t.bigint().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    bountyIdIdx: index().on(table.bountyId),
+    creatorIdx: index().on(table.creator),
   })
 );
 

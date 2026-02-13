@@ -12,11 +12,12 @@ ponder.on("BountyArena:BountyCreated", async ({ event, context }) => {
     bountyId: event.args.bountyId,
     creator: event.args.creator,
     reward: event.args.reward,
+    baseAnswerFee: event.args.baseAnswerFee,
     question: event.args.question,
     category: event.args.category,
     difficulty: event.args.difficulty,
     minRating: BigInt(event.args.minRating),
-    joinDeadline: BigInt(event.args.joinDeadline),
+    deadline: BigInt(event.args.deadline),
     maxAgents: event.args.maxAgents,
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
@@ -25,14 +26,15 @@ ponder.on("BountyArena:BountyCreated", async ({ event, context }) => {
 
   await notifyServer("/internal/bounty-update", {
     bountyId: Number(event.args.bountyId),
-    phase: "open",
+    phase: "active",
     creator: event.args.creator,
     reward: event.args.reward.toString(),
+    baseAnswerFee: event.args.baseAnswerFee.toString(),
     question: event.args.question,
     category: event.args.category,
     difficulty: Number(event.args.difficulty),
-    minRating: Number(event.args.minRating),
-    joinDeadline: new Date(Number(event.args.joinDeadline) * 1000).toISOString(),
+    minRating: event.args.minRating.toString(),
+    deadline: new Date(Number(event.args.deadline) * 1000).toISOString(),
     maxAgents: event.args.maxAgents,
   });
 });
@@ -44,6 +46,7 @@ ponder.on("BountyArena:AgentJoinedBounty", async ({ event, context }) => {
     agent: event.args.agent,
     agentId: event.args.agentId,
     agentCount: event.args.agentCount,
+    snapshotReputation: BigInt(event.args.snapshotReputation),
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
     transactionHash: event.log.transactionHash,
@@ -54,24 +57,7 @@ ponder.on("BountyArena:AgentJoinedBounty", async ({ event, context }) => {
     agent: event.args.agent,
     agentId: Number(event.args.agentId),
     agentCount: Number(event.args.agentCount),
-  });
-});
-
-ponder.on("BountyArena:BountyAnswerPeriodStarted", async ({ event, context }) => {
-  await context.db.insert(schema.chainBountyAnswerPeriodStarted).values({
-    id: `${event.log.transactionHash}-${event.log.logIndex}`,
-    bountyId: event.args.bountyId,
-    startTime: event.args.startTime,
-    deadline: event.args.deadline,
-    blockNumber: event.block.number,
-    blockTimestamp: event.block.timestamp,
-    transactionHash: event.log.transactionHash,
-  });
-
-  await notifyServer("/internal/bounty-update", {
-    bountyId: Number(event.args.bountyId),
-    phase: "answer_period",
-    answerTimeout: new Date(Number(event.args.deadline) * 1000).toISOString(),
+    snapshotReputation: event.args.snapshotReputation.toString(),
   });
 });
 
@@ -104,9 +90,7 @@ ponder.on("BountyArena:BountySettled", async ({ event, context }) => {
     id: `${event.log.transactionHash}-${event.log.logIndex}`,
     bountyId: event.args.bountyId,
     winner: event.args.winner,
-    winnerPrize: event.args.winnerPrize,
-    treasuryFee: event.args.treasuryFee,
-    burnAllocationAmount: event.args.burnAllocationAmount,
+    reward: event.args.reward,
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
     transactionHash: event.log.transactionHash,
@@ -115,45 +99,64 @@ ponder.on("BountyArena:BountySettled", async ({ event, context }) => {
   await notifyServer("/internal/bounty-settled", {
     bountyId: Number(event.args.bountyId),
     winnerAddr: event.args.winner,
-    prizeMon: event.args.winnerPrize.toString(),
-    treasuryFee: event.args.treasuryFee.toString(),
-    burnAllocation: event.args.burnAllocationAmount.toString(),
+    settleTxHash: event.log.transactionHash,
   });
 });
 
-ponder.on("BountyArena:BountyExpired", async ({ event, context }) => {
-  await context.db.insert(schema.chainBountyExpired).values({
+ponder.on("BountyArena:WinnerRewardClaimed", async ({ event, context }) => {
+  await context.db.insert(schema.chainWinnerRewardClaimed).values({
     id: `${event.log.transactionHash}-${event.log.logIndex}`,
     bountyId: event.args.bountyId,
+    winner: event.args.winner,
+    amount: event.args.amount,
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
     transactionHash: event.log.transactionHash,
   });
 
-  await notifyServer("/internal/bounty-settled", {
+  await notifyServer("/internal/bounty-claim", {
     bountyId: Number(event.args.bountyId),
-    expired: true,
-    reason: "no_agents",
+    type: "winner_reward_claimed",
+    winner: event.args.winner,
+    amount: event.args.amount.toString(),
   });
 });
 
-ponder.on("BountyArena:BountyRefunded", async ({ event, context }) => {
-  await context.db.insert(schema.chainBountyRefunded).values({
+ponder.on("BountyArena:ProportionalClaimed", async ({ event, context }) => {
+  await context.db.insert(schema.chainProportionalClaimed).values({
     id: `${event.log.transactionHash}-${event.log.logIndex}`,
     bountyId: event.args.bountyId,
-    agentCount: event.args.agentCount,
-    refundPerAgent: event.args.refundPerAgent,
+    agent: event.args.agent,
+    amount: event.args.amount,
     blockNumber: event.block.number,
     blockTimestamp: event.block.timestamp,
     transactionHash: event.log.transactionHash,
   });
 
-  await notifyServer("/internal/bounty-settled", {
+  await notifyServer("/internal/bounty-claim", {
     bountyId: Number(event.args.bountyId),
-    refunded: true,
-    reason: "answer_timeout",
-    refundAmount: event.args.refundPerAgent.toString(),
-    agentCount: Number(event.args.agentCount),
+    type: "proportional_claimed",
+    agent: event.args.agent,
+    amount: event.args.amount.toString(),
+  });
+});
+
+ponder.on("BountyArena:RefundClaimed", async ({ event, context }) => {
+  await context.db.insert(schema.chainRefundClaimed).values({
+    id: `${event.log.transactionHash}-${event.log.logIndex}`,
+    bountyId: event.args.bountyId,
+    creator: event.args.creator,
+    amount: event.args.amount,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+    transactionHash: event.log.transactionHash,
+  });
+
+  await notifyServer("/internal/bounty-claim", {
+    bountyId: Number(event.args.bountyId),
+    type: "refund_claimed",
+    creator: event.args.creator,
+    amount: event.args.amount.toString(),
   });
 });
 

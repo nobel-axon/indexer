@@ -19,8 +19,7 @@ ponder.on("IdentityRegistry:Registered", async ({ event, context }) => {
 
   await notifyServer("/internal/agent-registered", {
     agentId: Number(event.args.agentId),
-    owner: event.args.owner,
-    agentURI: event.args.agentURI,
+    wallet: event.args.owner,
     txHash: event.log.transactionHash,
   });
 });
@@ -49,13 +48,11 @@ ponder.on("ReputationRegistry:NewFeedback", async ({ event, context }) => {
 
   await notifyServer("/internal/feedback-submitted", {
     agentId: Number(event.args.agentId),
-    clientAddress: event.args.clientAddress,
-    feedbackIndex: Number(event.args.feedbackIndex),
+    client: event.args.clientAddress,
     value: Number(event.args.value),
-    valueDecimals: event.args.valueDecimals,
+    decimals: event.args.valueDecimals,
     tag1: event.args.tag1,
     tag2: event.args.tag2,
-    endpoint: event.args.endpoint,
     txHash: event.log.transactionHash,
   });
 });
