@@ -382,6 +382,35 @@ export const chainRefundClaimed = onchainTable(
   })
 );
 
+export const chainBountyApproved = onchainTable(
+  "chain_bounty_approved",
+  (t) => ({
+    id: t.text().primaryKey(),
+    bountyId: t.bigint().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    bountyIdIdx: index().on(table.bountyId),
+  })
+);
+
+export const chainBountyRejected = onchainTable(
+  "chain_bounty_rejected",
+  (t) => ({
+    id: t.text().primaryKey(),
+    bountyId: t.bigint().notNull(),
+    reason: t.text().notNull(),
+    blockNumber: t.bigint().notNull(),
+    blockTimestamp: t.bigint().notNull(),
+    transactionHash: t.text().notNull(),
+  }),
+  (table) => ({
+    bountyIdIdx: index().on(table.bountyId),
+  })
+);
+
 export const chainBountyNeuronBurned = onchainTable(
   "chain_bounty_neuron_burned",
   (t) => ({

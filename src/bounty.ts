@@ -26,7 +26,7 @@ ponder.on("BountyArena:BountyCreated", async ({ event, context }) => {
 
   await notifyServer("/internal/bounty-update", {
     bountyId: Number(event.args.bountyId),
-    phase: "active",
+    phase: "pending",
     creator: event.args.creator,
     reward: event.args.reward.toString(),
     baseAnswerFee: event.args.baseAnswerFee.toString(),
@@ -36,6 +36,38 @@ ponder.on("BountyArena:BountyCreated", async ({ event, context }) => {
     minRating: event.args.minRating.toString(),
     deadline: new Date(Number(event.args.deadline) * 1000).toISOString(),
     maxAgents: event.args.maxAgents,
+  });
+});
+
+ponder.on("BountyArena:BountyApproved", async ({ event, context }) => {
+  await context.db.insert(schema.chainBountyApproved).values({
+    id: `${event.log.transactionHash}-${event.log.logIndex}`,
+    bountyId: event.args.bountyId,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+    transactionHash: event.log.transactionHash,
+  });
+
+  await notifyServer("/internal/bounty-update", {
+    bountyId: Number(event.args.bountyId),
+    phase: "active",
+  });
+});
+
+ponder.on("BountyArena:BountyRejected", async ({ event, context }) => {
+  await context.db.insert(schema.chainBountyRejected).values({
+    id: `${event.log.transactionHash}-${event.log.logIndex}`,
+    bountyId: event.args.bountyId,
+    reason: event.args.reason,
+    blockNumber: event.block.number,
+    blockTimestamp: event.block.timestamp,
+    transactionHash: event.log.transactionHash,
+  });
+
+  await notifyServer("/internal/bounty-update", {
+    bountyId: Number(event.args.bountyId),
+    phase: "rejected",
+    rejectionReason: event.args.reason,
   });
 });
 
@@ -99,6 +131,7 @@ ponder.on("BountyArena:BountySettled", async ({ event, context }) => {
   await notifyServer("/internal/bounty-settled", {
     bountyId: Number(event.args.bountyId),
     winnerAddr: event.args.winner,
+    reward: event.args.reward.toString(),
     settleTxHash: event.log.transactionHash,
   });
 });
